@@ -90,9 +90,9 @@ def notify(cfg, title, msg):
     print(f"[{datetime.now():%H:%M:%S}] {title}: {msg}")
     if cfg.get("ntfy_topic"):
         try:
-            req = urllib.request.Request(
-                f"https://ntfy.sh/{cfg['ntfy_topic']}", data=msg.encode(),
-                headers={"Title": title, "Priority": "urgent", "Tags": "rotating_light"})
+            body = {"topic": cfg["ntfy_topic"], "title": title, "message": msg, "priority": 5, "tags": ["rotating_light"]}
+            req = urllib.request.Request(  # JSON publish: HTTP headers can't carry umlauts in the title
+                "https://ntfy.sh/", data=json.dumps(body).encode(), headers={"Content-Type": "application/json"})
             urllib.request.urlopen(req, timeout=15)
         except Exception as e:
             print("  ntfy failed:", e)
