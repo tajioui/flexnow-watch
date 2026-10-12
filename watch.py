@@ -118,8 +118,8 @@ READ_BLOCKS = """() => [...document.querySelectorAll('#containerListeTeilprf .pr
 def read_fach(page, prffach, wanted):
     """Open one Prüfungsfach and return its group blocks; expands collapsed Teilprüfungen until `wanted` show up."""
     fach = page.locator(f'a.studiumAnchor[onclick*=";BAP;{prffach};"]').first
-    fach.wait_for(timeout=30000)
-    fach.click()
+    fach.wait_for(state="attached", timeout=30000)
+    fach.evaluate("el => el.click()")  # the link sits in a collapsed tree node, so a normal click fails
     page.wait_for_function(
         f"() => {{ const w = document.querySelector('#containerListeTeilprf #wahlpflicht'); return w && w.value.includes(';{prffach};'); }}",
         timeout=30000)
