@@ -128,10 +128,14 @@ def read_fach(page, prffach, wanted):
     except PWTimeout:
         pass
     rows = page.evaluate(READ_BLOCKS)
-    if not wanted <= {r["prfang"] for r in rows}:
-        for head in page.locator("#containerListeTeilprf p.teilprfBezeichner:has(img.plusTeilPrf)").all():
-            head.click()
-            page.wait_for_timeout(2500)
+    for _ in range(12):  # expand collapsed Teilprüfungen one by one; the list re-renders after each click
+        if wanted <= {r["prfang"] for r in rows}:
+            break
+        heads = page.locator("#containerListeTeilprf p.teilprfBezeichner:has(img.plusTeilPrf)")
+        if heads.count() == 0:
+            break
+        heads.first.evaluate("el => el.click()")
+        page.wait_for_timeout(2500)
         rows = page.evaluate(READ_BLOCKS)
     return rows
 
