@@ -6,7 +6,8 @@ Logs into FlexNow 2, opens An-/Abmeldung -> each watched Prüfungsfach (config
 when a seat is free. Taking the seat (Ummeldung) is done by hand.
 
 Credentials live in the OS keychain (macOS Keychain / Windows Credential
-Manager) via `keyring`. They are never written to disk, logs or code.
+Manager) via `keyring`. On a server (Docker/Coolify) they come from the env
+vars FLEXNOW_USER / FLEXNOW_PASS instead, plus NTFY_TOPIC for the push topic.
 
   python watch.py --setup      # ask for username + password, store in keychain, create ntfy topic
   python watch.py --once       # one check, print all groups, exit
@@ -17,7 +18,6 @@ import argparse, getpass, json, os, random, re, secrets, subprocess, sys, time, 
 from datetime import datetime
 from pathlib import Path
 
-import keyring
 from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout
 
 SERVICE = "flexnow-jlu-watch"
@@ -42,6 +42,8 @@ def load_config():
     cfg = dict(DEFAULT_CONFIG)
     if CONFIG.exists():
         cfg.update(json.loads(CONFIG.read_text()))
+    if os.environ.get("NTFY_TOPIC"):
+        cfg["ntfy_topic"] = os.environ["NTFY_TOPIC"]
     return cfg
 
 
@@ -50,6 +52,7 @@ def save_config(cfg):
 
 
 def setup():
+    import keyring
     cfg = load_config()
     user = input("FlexNow Kennung: ").strip().lower()
     pw = getpass.getpass("FlexNow Kennwort (wird nicht angezeigt): ")
@@ -64,6 +67,7 @@ def setup():
 
 
 def forget():
+    import keyring
     user = keyring.get_password(SERVICE, "username")
     if user:
         keyring.delete_password(SERVICE, user)
@@ -72,6 +76,9 @@ def forget():
 
 
 def creds():
+    if os.environ.get("FLEXNOW_USER") and os.environ.get("FLEXNOW_PASS"):
+        return os.environ["FLEXNOW_USER"].strip().lower(), os.environ["FLEXNOW_PASS"]
+    import keyring
     user = keyring.get_password(SERVICE, "username")
     pw = keyring.get_password(SERVICE, user) if user else None
     if not (user and pw):
@@ -170,11 +177,16 @@ def report(rows):
 def loop(cfg):
     alerted = set()
     fails = 0
+    first = True
     while True:
         try:
             rows = check(cfg)
             fails = 0
             print(f"[{datetime.now():%d.%m. %H:%M:%S}] check ok")
+            if first:
+                report(rows)
+                notify(cfg, "FlexNow-Watcher läuft", "Erster Check ok. Push kommt, sobald ein Platz frei wird.")
+                first = False
             by_id = {r["prfang"]: r for r in rows}
             for t in cfg["targets"]:
                 r = by_id.get(t["prfang"])
