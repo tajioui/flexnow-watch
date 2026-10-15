@@ -27,8 +27,8 @@ LOGIN_URL = "https://www.uni-giessen.de/de/studium/waehrend/ecampus/flexnow/"
 DEFAULT_CONFIG = {
     # Ids as seen in FlexNow on 11.10.2026. prffach = Prüfungsfach, prfang = the group.
     "targets": [
-        {"prffach": "2947", "prfang": "102579", "label": "Diagnostik Kurs A (Kersting)",
-         "hint": "Kurs C abmelden + Kurs A anmelden in EINEM Korb, dann Abschicken."},
+        {"prffach": "2947", "prfang": "102524", "label": "Diagnostik Kurs E (Ziegler)",
+         "hint": "Kurs C abmelden + Kurs E anmelden in EINEM Korb, dann Abschicken."},
         {"prffach": "2949", "prfang": "102529", "label": "Gesprächsführung Kurs C (Hermann)",
          "hint": "PM-11 Klinische Psychologie: Gesprächsführung Kurs C in den Korb, dann Abschicken."},
     ],
